@@ -1,0 +1,7 @@
+streamlit
+langchain
+langchain-openai
+langchain-neo4j
+langchain-experimental
+pypdf
+python-dotenv
