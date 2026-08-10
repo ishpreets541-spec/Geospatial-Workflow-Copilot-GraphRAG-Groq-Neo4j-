@@ -35,7 +35,74 @@ Standard vector-search RAG pipelines struggle with complex, multi-step geospatia
 </div>
 
 ---
+flowchart TB
+    %% Styling configurations
+    classDef llm fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:#000
+    classDef db fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000
+    classDef pipeline fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#000
+    classDef ui fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px,color:#000
+    classDef input fill:#fafafa,stroke:#424242,stroke-width:1px,color:#000
 
+    %% Top Level External Services
+    subgraph External Compute & Services
+        direction LR
+        GROQ((🚀 Groq LPU\nllama-3.3-70b)):::llm
+        LANGCHAIN((🦜 LangChain\nOrchestration)):::pipeline
+    end
+
+    %% Left Side: Data Ingestion
+    subgraph Data Layer
+        direction TB
+        DOCS[/📄 Geospatial PDFs\nArcPy, Sentinel, ML/]-.-> LOADER
+        LOADER[PyPDF Loader]:::input -.-> SPLITTER
+        SPLITTER[Recursive Text Splitter]:::input
+    end
+
+    %% Center-Left: Ingestion Pipeline (Graph Builder)
+    subgraph Knowledge Graph Ingestion
+        direction TB
+        EXTRACTOR{LLM Graph Transformer\nExtracts Nodes & Edges}:::llm
+        SPLITTER --> EXTRACTOR
+    end
+
+    %% Bottom Center: Memory Layer (Database)
+    subgraph Memory Layer
+        direction TB
+        GRAPH_DB[(🕸️ Neo4j AuraDB\nGeospatial Graph)]:::db
+        EXTRACTOR == Populates ==> GRAPH_DB
+    end
+
+    %% Center-Right: GraphRAG Decision Pipeline
+    subgraph GraphRAG Decision Pipeline
+        direction TB
+        CYPHER_AGENT{Cypher Generation Agent}:::llm
+        VALIDATOR[Syntax Validator]:::pipeline
+        SYNTHESIS{Context Synthesis Agent}:::llm
+        FALLBACK{Domain Fallback Agent}:::llm
+        
+        CYPHER_AGENT --> VALIDATOR
+        VALIDATOR == Executes Query ==> GRAPH_DB
+        GRAPH_DB == Returns Graph Context ==> SYNTHESIS
+        GRAPH_DB -. Empty Context .-> FALLBACK
+    end
+
+    %% Right Side: Execution & UI
+    subgraph Execution & UI Layer
+        direction TB
+        STREAMLIT[🌐 Streamlit Web App]:::ui
+        OUTPUT[/💻 ArcPy Code & Workflow/]:::ui
+        
+        STREAMLIT == User Query ==> CYPHER_AGENT
+        SYNTHESIS --> OUTPUT
+        FALLBACK --> OUTPUT
+        OUTPUT -. Renders in .-> STREAMLIT
+    end
+
+    %% Cross-layer LLM Connections
+    GROQ -. Powers .-> EXTRACTOR
+    GROQ -. Powers .-> CYPHER_AGENT
+    GROQ -. Powers .-> SYNTHESIS
+    GROQ -. Powers .-> FALLBACK
 ## ✨ Key Features
 
 * **Knowledge Graph Ingestion:** Autonomously extracts domain entities (*Software, Satellite, Algorithm, Parameter, Dataset, Workflow*) and maps their relationships (*USES, PROCESSES, REQUIRES, CLIPS, MOSAICS*) using `LLMGraphTransformer`.
