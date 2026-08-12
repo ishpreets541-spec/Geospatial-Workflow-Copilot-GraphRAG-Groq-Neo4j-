@@ -56,6 +56,7 @@ Standard vector-search RAG pipelines struggle with complex, multi-step geospatia
 | **Data Parser** | PyPDF | Automated chunking and parsing of dense GIS literature. |
 
 ---
+### 👩‍💻 Author
 **Ishpreet Singh**
 
 M.Tech
